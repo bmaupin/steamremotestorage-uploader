@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -19,6 +20,7 @@ var fItemDescription string = ""
 var fFile string = ""
 var fPreviewFile string = ""
 var fChangeNote string = ""
+var fTags string = ""
 
 func parseArgs() {
 	flag.Usage = func() {
@@ -35,6 +37,7 @@ func parseArgs() {
 	flag.StringVar(&fFile, "f", "", "4:Path to `file` for upload")
 	flag.StringVar(&fPreviewFile, "p", "", "5:Path to preview `image` for upload")
 	flag.StringVar(&fChangeNote, "n", "", "6:Change `note`")
+	flag.StringVar(&fTags, "tags", "", "7:Comma-separated list of item `tags`")
 	flag.Parse()
 
 	if len(fFile) == 0 {
@@ -158,6 +161,13 @@ func updateItem() {
 	}
 
 	//steam.SteamRemoteStorage().UpdatePublishedFileVisibility(PublishedFileUpdateHandle, steam.K_ERemoteStoragePublishedFileVisibilityPrivate)
+
+	if len(fTags) > 0 {
+		tags := strings.Split(fTags, ",")
+		steamTags, cleanupSteamTags := util.GoStringArrayToSteamStringArray(tags)
+		defer cleanupSteamTags()
+		steam.SteamRemoteStorage().UpdatePublishedFileTags(PublishedFileUpdateHandle, *steamTags)
+	}
 
 	hSteamAPICall := steam.SteamRemoteStorage().CommitPublishedFileUpdate(PublishedFileUpdateHandle)
 
