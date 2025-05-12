@@ -96,3 +96,17 @@ If you would like to put the binary in your path so you can run it from anywhere
    ```
    LD_LIBRARY_PATH=sdk/redistributable_bin/linux64/ ./steamremotestorage-uploader
    ```
+
+## Troubleshooting
+
+#### `Item upload failed: 21`
+
+Updating an existing mod normally goes quickly, but sometimes it takes a while and throws this error. If it happens, close and reopen Steam and try again.
+
+#### `IPC function call IClientRemoteStorage::FileWrite took too long`
+
+This can be ignored
+
+#### `panic: runtime error: index out of range [0] with length 0`
+
+Make sure all of the filenames (mod file, preview image, etc) are correct and try again
