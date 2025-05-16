@@ -30,6 +30,24 @@ For uploading using the newer UGC API: see here: https://github.com/nnnn20430/st
            Comma-separated list of item tags (default "")
    ```
 
+#### Create a new item
+
+When creating an item, you must provide a file to publish and all else is optional, e.g.
+
+```
+steamremotestorage-uploader -a 12345 -t "My mod name" -tags "Other,Gameplay,Leaders" -f "mymod.file" -p assets/preview.jpg
+```
+
+ⓘ Change notes do not work for new items. To add change notes, you can simply edit the change notes directly in the Steam workshop using your browser
+
+#### Update an item
+
+When updating an item, you must provide the item ID and all else is optional, e.g.
+
+```
+steamremotestorage-uploader -a 12345 -i 123456798 -t "My mod name" -tags "Other,Gameplay,Leaders" -f "mymod.file" -p assets/preview.jpg -n "v2: Version summary"
+```
+
 #### Run from path
 
 If you would like to put the binary in your path so you can run it from anywhere:
@@ -43,6 +61,10 @@ If you would like to put the binary in your path so you can run it from anywhere
    ```
 
 ## Development
+
+#### References
+
+[ISteamRemoteStorage Interface](https://partner.steamgames.com/doc/api/isteamremotestorage)
 
 #### Prerequisites
 
@@ -75,6 +97,8 @@ If you would like to put the binary in your path so you can run it from anywhere
    ```
    LD_LIBRARY_PATH=sdk/redistributable_bin/linux64/ go run main.go
    ```
+
+   ⓘ Because this references native code, sometimes it can take a minute or more to run as the native code is compiled
 
 #### Build
 

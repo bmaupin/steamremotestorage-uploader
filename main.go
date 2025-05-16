@@ -24,7 +24,7 @@ var fTags string = ""
 
 func parseArgs() {
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "%s: -f file [options]\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "%s: [options]\n", os.Args[0])
 		util.PrintDefaults()
 	}
 
@@ -40,7 +40,14 @@ func parseArgs() {
 	flag.StringVar(&fTags, "tags", "", "7:Comma-separated list of item `tags`")
 	flag.Parse()
 
-	if len(fFile) == 0 {
+	if fPublishedFileID == 0 && len(fFile) == 0 {
+		fmt.Println("Error: Either an existing item id or a file to upload is required\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	if fPublishedFileID == 0 && len(fChangeNote) > 0 {
+		fmt.Println("Error: Change notes can only be set when updating an existing item\n")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -70,6 +77,16 @@ func createItem() {
 		util.PtrFree(&fb)
 	}
 
+	var steamTags steam.SteamParamStringArray_t
+	if len(fTags) > 0 {
+		tags := strings.Split(fTags, ",")
+		_steamTags, cleanupSteamTags := util.GoStringArrayToSteamStringArray(tags)
+		steamTags = *_steamTags
+		defer cleanupSteamTags()
+	} else {
+		steamTags = steam.NewSteamParamStringArray_t()
+	}
+
 	hSteamAPICall := steam.SteamRemoteStorage().PublishWorkshopFile(
 		filepath.Base(fFile),
 		(func() string {
@@ -83,7 +100,7 @@ func createItem() {
 		fItemTitle,
 		fItemDescription,
 		steam.K_ERemoteStoragePublishedFileVisibilityPrivate,
-		steam.NewSteamParamStringArray_t(),
+		steamTags,
 		steam.K_EWorkshopFileTypeCommunity,
 	)
 
@@ -122,13 +139,15 @@ func updateItem() {
 
 	fmt.Println("Updating item...")
 
-	fb, _ = ioutil.ReadFile(util.ArgSlice(filepath.Abs(fFile))[0].(string))
-	if !steam.SteamRemoteStorage().FileWrite(filepath.Base(fFile), util.GoStringToCString(string(fb)), len(fb)) {
-		fmt.Println("Writing file to cloud failed")
-		os.Exit(1)
+	if len(fFile) > 0 {
+		fb, _ = ioutil.ReadFile(util.ArgSlice(filepath.Abs(fFile))[0].(string))
+		if !steam.SteamRemoteStorage().FileWrite(filepath.Base(fFile), util.GoStringToCString(string(fb)), len(fb)) {
+			fmt.Println("Writing file to cloud failed")
+			os.Exit(1)
+		}
+		defer steam.SteamRemoteStorage().FileDelete(filepath.Base(fFile))
+		util.PtrFree(&fb)
 	}
-	defer steam.SteamRemoteStorage().FileDelete(filepath.Base(fFile))
-	util.PtrFree(&fb)
 
 	if len(fPreviewFile) > 0 {
 		fb, _ = ioutil.ReadFile(util.ArgSlice(filepath.Abs(fPreviewFile))[0].(string))
@@ -150,7 +169,9 @@ func updateItem() {
 		steam.SteamRemoteStorage().UpdatePublishedFileDescription(PublishedFileUpdateHandle, fItemDescription)
 	}
 
-	steam.SteamRemoteStorage().UpdatePublishedFileFile(PublishedFileUpdateHandle, filepath.Base(fFile))
+	if len(fFile) > 0 {
+		steam.SteamRemoteStorage().UpdatePublishedFileFile(PublishedFileUpdateHandle, filepath.Base(fFile))
+	}
 
 	if len(fPreviewFile) > 0 {
 		steam.SteamRemoteStorage().UpdatePublishedFilePreviewFile(PublishedFileUpdateHandle, filepath.Base(fPreviewFile))
@@ -208,6 +229,7 @@ func main() {
 		fmt.Println("Could not get executable path")
 		os.Exit(1)
 	}
+	// TODO: delete steam_appid.txt when done?
 	if ioutil.WriteFile(
 		filepath.Join(filepath.Dir(ep), "steam_appid.txt"),
 		[]byte(strconv.FormatUint(uint64(fAppId), 10)),
