@@ -229,6 +229,7 @@ func main() {
 		fmt.Println("Could not get executable path")
 		os.Exit(1)
 	}
+	// TODO: delete steam_appid.txt when done?
 	if ioutil.WriteFile(
 		filepath.Join(filepath.Dir(ep), "steam_appid.txt"),
 		[]byte(strconv.FormatUint(uint64(fAppId), 10)),
