@@ -45,6 +45,12 @@ func parseArgs() {
 		flag.Usage()
 		os.Exit(1)
 	}
+
+	if fPublishedFileID == 0 && len(fChangeNote) > 0 {
+		fmt.Println("Error: Change notes can only be set when updating an existing item\n")
+		flag.Usage()
+		os.Exit(1)
+	}
 }
 
 func createItem() {
@@ -71,6 +77,16 @@ func createItem() {
 		util.PtrFree(&fb)
 	}
 
+	var steamTags steam.SteamParamStringArray_t
+	if len(fTags) > 0 {
+		tags := strings.Split(fTags, ",")
+		_steamTags, cleanupSteamTags := util.GoStringArrayToSteamStringArray(tags)
+		steamTags = *_steamTags
+		defer cleanupSteamTags()
+	} else {
+		steamTags = steam.NewSteamParamStringArray_t()
+	}
+
 	hSteamAPICall := steam.SteamRemoteStorage().PublishWorkshopFile(
 		filepath.Base(fFile),
 		(func() string {
@@ -84,8 +100,7 @@ func createItem() {
 		fItemTitle,
 		fItemDescription,
 		steam.K_ERemoteStoragePublishedFileVisibilityPrivate,
-		// TODO: this is for tags
-		steam.NewSteamParamStringArray_t(),
+		steamTags,
 		steam.K_EWorkshopFileTypeCommunity,
 	)
 
@@ -169,7 +184,6 @@ func updateItem() {
 	//steam.SteamRemoteStorage().UpdatePublishedFileVisibility(PublishedFileUpdateHandle, steam.K_ERemoteStoragePublishedFileVisibilityPrivate)
 
 	if len(fTags) > 0 {
-		// TODO: can we use steam.NewSteamParamStringArray_t() ?
 		tags := strings.Split(fTags, ",")
 		steamTags, cleanupSteamTags := util.GoStringArrayToSteamStringArray(tags)
 		defer cleanupSteamTags()
