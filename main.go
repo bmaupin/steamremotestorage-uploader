@@ -24,7 +24,7 @@ var fTags string = ""
 
 func parseArgs() {
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "%s: -f file [options]\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "%s: [options]\n", os.Args[0])
 		util.PrintDefaults()
 	}
 
@@ -40,7 +40,8 @@ func parseArgs() {
 	flag.StringVar(&fTags, "tags", "", "7:Comma-separated list of item `tags`")
 	flag.Parse()
 
-	if len(fFile) == 0 {
+	if fPublishedFileID == 0 && len(fFile) == 0 {
+		fmt.Println("Error: Either an existing item id or a file to upload is required\n")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -83,6 +84,7 @@ func createItem() {
 		fItemTitle,
 		fItemDescription,
 		steam.K_ERemoteStoragePublishedFileVisibilityPrivate,
+		// TODO: this is for tags
 		steam.NewSteamParamStringArray_t(),
 		steam.K_EWorkshopFileTypeCommunity,
 	)
@@ -122,13 +124,15 @@ func updateItem() {
 
 	fmt.Println("Updating item...")
 
-	fb, _ = ioutil.ReadFile(util.ArgSlice(filepath.Abs(fFile))[0].(string))
-	if !steam.SteamRemoteStorage().FileWrite(filepath.Base(fFile), util.GoStringToCString(string(fb)), len(fb)) {
-		fmt.Println("Writing file to cloud failed")
-		os.Exit(1)
+	if len(fFile) > 0 {
+		fb, _ = ioutil.ReadFile(util.ArgSlice(filepath.Abs(fFile))[0].(string))
+		if !steam.SteamRemoteStorage().FileWrite(filepath.Base(fFile), util.GoStringToCString(string(fb)), len(fb)) {
+			fmt.Println("Writing file to cloud failed")
+			os.Exit(1)
+		}
+		defer steam.SteamRemoteStorage().FileDelete(filepath.Base(fFile))
+		util.PtrFree(&fb)
 	}
-	defer steam.SteamRemoteStorage().FileDelete(filepath.Base(fFile))
-	util.PtrFree(&fb)
 
 	if len(fPreviewFile) > 0 {
 		fb, _ = ioutil.ReadFile(util.ArgSlice(filepath.Abs(fPreviewFile))[0].(string))
@@ -150,7 +154,9 @@ func updateItem() {
 		steam.SteamRemoteStorage().UpdatePublishedFileDescription(PublishedFileUpdateHandle, fItemDescription)
 	}
 
-	steam.SteamRemoteStorage().UpdatePublishedFileFile(PublishedFileUpdateHandle, filepath.Base(fFile))
+	if len(fFile) > 0 {
+		steam.SteamRemoteStorage().UpdatePublishedFileFile(PublishedFileUpdateHandle, filepath.Base(fFile))
+	}
 
 	if len(fPreviewFile) > 0 {
 		steam.SteamRemoteStorage().UpdatePublishedFilePreviewFile(PublishedFileUpdateHandle, filepath.Base(fPreviewFile))
@@ -163,6 +169,7 @@ func updateItem() {
 	//steam.SteamRemoteStorage().UpdatePublishedFileVisibility(PublishedFileUpdateHandle, steam.K_ERemoteStoragePublishedFileVisibilityPrivate)
 
 	if len(fTags) > 0 {
+		// TODO: can we use steam.NewSteamParamStringArray_t() ?
 		tags := strings.Split(fTags, ",")
 		steamTags, cleanupSteamTags := util.GoStringArrayToSteamStringArray(tags)
 		defer cleanupSteamTags()

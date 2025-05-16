@@ -30,6 +30,24 @@ For uploading using the newer UGC API: see here: https://github.com/nnnn20430/st
            Comma-separated list of item tags (default "")
    ```
 
+#### Create a new item
+
+When creating an item, you must provide a file to publish and all else is optional, e.g.
+
+```
+steamremotestorage-uploader -a 12345 -t "My mod name" -f "mymod.file" -p assets/preview.jpg
+```
+
+ⓘ Change notes do not work for new items and tag functionality has not yet been implemented. To add change notes and tags, update the item after publishing
+
+#### Update an item
+
+When updating an item, you must provide the item ID and all else is optional, e.g.
+
+```
+steamremotestorage-uploader -a 12345 -i 123456798 -t "My mod name" -tags "Other,Gameplay,Leaders" -f "mymod.file" -p assets/preview.jpg -n "v2: Version summary"
+```
+
 #### Run from path
 
 If you would like to put the binary in your path so you can run it from anywhere:
