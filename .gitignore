@@ -1,4 +1,6 @@
+libsteam_api.so
 main
 sdk/
 steam_appid.txt
 steamremotestorage-uploader
+steamremotestorage-uploader-*.tar.xz
